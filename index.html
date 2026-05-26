@@ -236,6 +236,7 @@ const thanksMsg = document.getElementById('thanks-msg');
 const nagMsg = document.getElementById('nag-msg');
 
 let denyScale = 1;
+let drumrollAudio = null;
 
 envelopeScreen.addEventListener('click', () => {
   envelope.classList.add('open');
@@ -276,7 +277,8 @@ function showStep() {
     }
 
     if (step.type === 'drumroll') {
-      new Audio('drumroll.mp3').play();
+      drumrollAudio = new Audio('drumroll.mp3');
+      drumrollAudio.play();
     }
 
     if (step.type === 'finale') {
@@ -328,6 +330,11 @@ acceptBtn.addEventListener('click', () => {
 
 nextBtn.addEventListener('click', () => {
   if (waiting) return;
+
+  if (drumrollAudio) {
+    drumrollAudio.pause();
+    drumrollAudio = null;
+  }
 
   if (steps[current].type === 'intermission' && !accepted) {
     nagMsg.textContent = 'please accept me first';
