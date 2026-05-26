@@ -194,7 +194,7 @@
     <div id="card-text"></div>
     <div id="intermission-buttons">
       <button id="accept-btn">accept</button>
-      <button id="deny-btn">deny</button>
+      <button id="deny-btn">reject</button>
     </div>
     <div id="thanks-msg">thanks</div>
     <div id="nag-msg"></div>
@@ -215,7 +215,7 @@ const steps = [
   { text: "punchline in 3...", delay: 2500 },
   { text: "punchline in 2...", delay: 2800 },
   { text: "punchline in 1...", delay: 3000 },
-  { text: "🥁 drumroll please 🥁", delay: 2500 },
+  { text: "🥁 drumroll please 🥁", delay: 2500, type: "drumroll" },
   { text: "from the darth maul!", delay: 0, type: "finale" }
 ];
 
@@ -273,6 +273,10 @@ function showStep() {
       thanksMsg.style.display = 'block';
       // don't show next until accepted
       return;
+    }
+
+    if (step.type === 'drumroll') {
+      new Audio('drumroll.mp3').play();
     }
 
     if (step.type === 'finale') {
