@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>.</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    font-family: Arial, sans-serif;
+    color: #222;
+  }
+
+  #envelope-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .question {
+    font-size: 20px;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  /* Envelope */
+  .envelope {
+    width: 320px;
+    height: 200px;
+    position: relative;
+  }
+  .envelope-body {
+    width: 100%;
+    height: 100%;
+    background: #f5edd6;
+    border: 1.5px solid #ccc;
+    position: relative;
+    z-index: 2;
+  }
+  .envelope-flap {
+    width: 0; height: 0;
+    border-left: 160px solid transparent;
+    border-right: 160px solid transparent;
+    border-top: 120px solid #ece4cc;
+    border-top-color: #ece4cc;
+    position: absolute;
+    top: 0;
+    z-index: 3;
+    transition: transform 0.8s ease-in-out;
+    transform-origin: top center;
+  }
+  .envelope.open .envelope-flap {
+    transform: rotateX(180deg);
+    z-index: 1;
+  }
+  .envelope-inner {
+    width: 0; height: 0;
+    border-left: 160px solid transparent;
+    border-right: 160px solid transparent;
+    border-bottom: 100px solid #faf4e4;
+    position: absolute;
+    top: 0;
+    z-index: 1;
+  }
+  .envelope-label {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    color: #aaa;
+    z-index: 4;
+  }
+
+  /* Paper cards */
+  #paper-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .paper {
+    width: 420px;
+    min-height: 220px;
+    background: #fff;
+    border: 1.5px solid #ddd;
+    box-shadow: 1px 2px 6px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s, transform 0.8s;
+  }
+  .paper.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #card-text {
+    font-size: 32px;
+    white-space: pre-line;
+  }
+
+  /* Intermission stuff */
+  #intermission-buttons {
+    display: none;
+    gap: 20px;
+    margin-top: 25px;
+  }
+  #intermission-buttons button {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    padding: 8px 24px;
+    cursor: pointer;
+    background: #fff;
+    border: 1.5px solid #ccc;
+    color: #222;
+    transition: transform 0.3s, opacity 0.3s;
+  }
+  #intermission-buttons button:hover {
+    border-color: #999;
+  }
+  #deny-btn {
+    transition: transform 0.4s, opacity 0.4s;
+  }
+
+  #thanks-msg {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #999;
+    opacity: 0;
+    transition: opacity 2s;
+  }
+  #thanks-msg.show { opacity: 1; }
+
+  #nag-msg {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #d44;
+    min-height: 18px;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  #nag-msg.show { opacity: 1; }
+
+  /* Next button */
+  #next-btn {
+    margin-top: 40px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #bbb;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px 20px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #next-btn.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #next-btn:hover { color: #777; }
+  #next-btn.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div id="envelope-screen">
+  <div class="question">where does darth vader get his sneakers?</div>
+  <div style="font-size:13px;color:#aaa;margin-bottom:30px;margin-top:-30px">by ethan yang</div>
+  <div class="envelope" id="envelope">
+    <div class="envelope-flap"></div>
+    <div class="envelope-inner"></div>
+    <div class="envelope-body"></div>
+    <div class="envelope-label">click to open</div>
+  </div>
+</div>
+
+<div id="paper-screen">
+  <div class="paper" id="paper">
+    <div id="card-text"></div>
+    <div id="intermission-buttons">
+      <button id="accept-btn">accept</button>
+      <button id="deny-btn">deny</button>
+    </div>
+    <div id="thanks-msg">thanks</div>
+    <div id="nag-msg"></div>
+  </div>
+  <button id="next-btn">next</button>
+</div>
+
+<script>
+const steps = [
+  { text: "punchline in 10...", delay: 1500 },
+  { text: "punchline in 9...", delay: 1600 },
+  { text: "punchline in 8...", delay: 1800 },
+  { text: "punchline in 7...", delay: 2000 },
+  { text: "punchline in 6...", delay: 2200 },
+  { text: "intermission\n\nplease accept me for \nai hackathon 2026\npls pls pls", delay: 0, type: "intermission" },
+  { text: "punchline in 5...", delay: 2000 },
+  { text: "punchline in 4...", delay: 2200 },
+  { text: "punchline in 3...", delay: 2500 },
+  { text: "punchline in 2...", delay: 2800 },
+  { text: "punchline in 1...", delay: 3000 },
+  { text: "🥁 drumroll please 🥁", delay: 2500 },
+  { text: "from the darth maul!", delay: 0, type: "finale" }
+];
+
+let current = 0;
+let waiting = false;
+let accepted = false;
+
+const envelopeScreen = document.getElementById('envelope-screen');
+const envelope = document.getElementById('envelope');
+const paperScreen = document.getElementById('paper-screen');
+const paper = document.getElementById('paper');
+const cardText = document.getElementById('card-text');
+const nextBtn = document.getElementById('next-btn');
+const intermissionButtons = document.getElementById('intermission-buttons');
+const acceptBtn = document.getElementById('accept-btn');
+const denyBtn = document.getElementById('deny-btn');
+const thanksMsg = document.getElementById('thanks-msg');
+const nagMsg = document.getElementById('nag-msg');
+
+let denyScale = 1;
+
+envelopeScreen.addEventListener('click', () => {
+  envelope.classList.add('open');
+  setTimeout(() => {
+    envelopeScreen.style.display = 'none';
+    paperScreen.style.display = 'flex';
+    showStep();
+  }, 900);
+});
+
+function showStep() {
+  const step = steps[current];
+  paper.classList.remove('show');
+  nextBtn.classList.remove('show');
+  nextBtn.style.transition = 'none';
+  nextBtn.style.opacity = '0';
+  nextBtn.style.pointerEvents = 'none';
+  intermissionButtons.style.display = 'none';
+  thanksMsg.classList.remove('show');
+  thanksMsg.style.display = 'none';
+  nagMsg.classList.remove('show');
+  nagMsg.textContent = '';
+
+  setTimeout(() => {
+    cardText.textContent = step.text;
+    paper.classList.add('show');
+
+    if (step.type === 'intermission') {
+      accepted = false;
+      denyScale = 1;
+      denyBtn.style.transform = 'scale(1)';
+      denyBtn.style.opacity = '1';
+      denyBtn.disabled = false;
+      intermissionButtons.style.display = 'flex';
+      thanksMsg.style.display = 'block';
+      // don't show next until accepted
+      return;
+    }
+
+    if (step.type === 'finale') {
+      nextBtn.classList.add('hidden');
+      new Audio('laugh.mp3').play();
+      return;
+    }
+
+    // slowly fade in the next button over the delay duration
+    nextBtn.style.transition = `opacity ${step.delay}ms`;
+    nextBtn.style.opacity = '0';
+    nextBtn.style.pointerEvents = 'none';
+    // force reflow then start fade
+    void nextBtn.offsetWidth;
+    nextBtn.style.opacity = '1';
+
+    waiting = true;
+    setTimeout(() => {
+      waiting = false;
+      nextBtn.style.pointerEvents = 'auto';
+      nextBtn.classList.add('show');
+    }, step.delay);
+  }, 400);
+}
+
+denyBtn.addEventListener('click', () => {
+  denyScale *= 0.7;
+  denyBtn.style.transform = `scale(${denyScale})`;
+  if (denyScale < 0.15) {
+    denyBtn.style.opacity = '0';
+    denyBtn.disabled = true;
+    setTimeout(() => { denyBtn.style.display = 'none'; }, 400);
+  }
+});
+
+acceptBtn.addEventListener('click', () => {
+  accepted = true;
+  intermissionButtons.style.display = 'none';
+  nagMsg.classList.remove('show');
+  nagMsg.textContent = '';
+  thanksMsg.classList.add('show');
+  setTimeout(() => {
+    nextBtn.style.transition = 'opacity 1s';
+    nextBtn.style.opacity = '1';
+    nextBtn.style.pointerEvents = 'auto';
+    nextBtn.classList.add('show');
+  }, 2000);
+});
+
+nextBtn.addEventListener('click', () => {
+  if (waiting) return;
+
+  if (steps[current].type === 'intermission' && !accepted) {
+    nagMsg.textContent = 'please accept me first';
+    nagMsg.classList.add('show');
+    return;
+  }
+
+  current++;
+  if (current < steps.length) showStep();
+});
+</script>
+</body>
+</html>
